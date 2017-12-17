@@ -693,6 +693,10 @@ bool BrcmPatchRAM::continuousRead()
                 return false;
             }
         }
+        else
+        {
+            return false;
+        }
     }
 
     return true;
@@ -889,6 +893,7 @@ bool BrcmPatchRAM::performUpgrade()
     OSArray* instructions = NULL;
     OSCollectionIterator* iterator = NULL;
     OSData* data;
+    
 #ifdef DEBUG
     DeviceState previousState = kUnknown;
 #endif
