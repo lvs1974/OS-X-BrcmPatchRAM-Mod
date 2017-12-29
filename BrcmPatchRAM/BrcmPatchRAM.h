@@ -81,6 +81,9 @@ private:
     volatile DeviceState mDeviceState = kInitialize;
     volatile uint16_t mFirmwareVersion = 0xFFFF;
     IOLock* mCompletionLock = NULL;
+    
+    enum { iMaxCompletionRetries = 10 };
+    int mCompletionCount = iMaxCompletionRetries;
     static UInt16 mLoopCounter;
     static uint64_t mLastTime;
     

@@ -716,6 +716,7 @@ void BrcmPatchRAM::readCompletion(void* target, void* parameter, IOReturn status
     {
         case kIOReturnSuccess:
             me->hciParseResponse(me->mReadBuffer->getBytesNoCopy(), bytesTransferred, NULL, NULL);
+            me->mCompletionCount = iMaxCompletionRetries;
             break;
         case kIOReturnAborted:
             AlwaysLog("[%04x:%04x]: readCompletion - Return aborted (0x%08x)\n", me->mVendorId, me->mProductId, status);
@@ -727,10 +728,14 @@ void BrcmPatchRAM::readCompletion(void* target, void* parameter, IOReturn status
             break;
         case kIOUSBTransactionTimeout:
             AlwaysLog("[%04x:%04x]: readCompletion - Transaction timeout (0x%08x)\n", me->mVendorId, me->mProductId, status);
+            if (--me->mCompletionCount < 0)
+                me->mDeviceState = kUpdateAborted;
             break;
         case kIOReturnNotResponding:
             AlwaysLog("[%04x:%04x]: Not responding - Delaying next read.\n", me->mVendorId, me->mProductId);
             me->mInterruptPipe.clearStall();
+            if (--me->mCompletionCount < 0)
+                me->mDeviceState = kUpdateAborted;
             break;
         default:
             AlwaysLog("[%04x:%04x]: readCompletion - Unknown error (0x%08x)\n", me->mVendorId, me->mProductId, status);
@@ -900,6 +905,7 @@ bool BrcmPatchRAM::performUpgrade()
 
     IOLockLock(mCompletionLock);
     mDeviceState = kInitialize;
+    mCompletionCount = iMaxCompletionRetries;
 
     while (true)
     {
