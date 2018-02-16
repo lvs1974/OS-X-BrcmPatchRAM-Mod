@@ -34,7 +34,7 @@ OSString* BrcmPatchRAM::brcmBundleIdentifier = NULL;
 OSString* BrcmPatchRAM::brcmIOClass = NULL;
 OSString* BrcmPatchRAM::brcmProviderClass = NULL;
 
-UInt16 BrcmPatchRAM::mLoopCounter = 0;
+UInt16   BrcmPatchRAM::mLoopCounter = 0;
 uint64_t BrcmPatchRAM::mLastTime = 0;
 
 extern "C"
@@ -130,57 +130,36 @@ IOService* BrcmPatchRAM::probe(IOService *provider, SInt32 *probeScore)
     
     clock_get_uptime(&start_time);
     
-    AlwaysLog("Provider name is %s, and his provider name is %s\n", provider->getName(), provider->getProvider()->getName());
-    
-    IOService *rootProvider = provider->getProvider();
-    if (rootProvider)
+    mDevice.setDevice(provider);
+    if (!mDevice.getValidatedDevice())
     {
-        OSIterator *iter = rootProvider->getClientIterator();
-        if (iter)
-        {
-            IOService *client;
-            while ((client = (IOService *) iter->getNextObject()))
-            {
-                OSNumber *session = OSDynamicCast(OSNumber, client->getProperty("sessionID"));
-                if (session == NULL)
-                    continue;
-                
-                AlwaysLog("Client name is %s, sessionID=\"0x%llx\"\n", client->getName(), session->unsigned64BitValue());
-                
-                mDevice.setDevice(client);
-                if (!mDevice.getValidatedDevice())
-                {
-                    AlwaysLog("Provider type is incorrect (not IOUSBDevice or IOUSBHostDevice)\n");
-                    mDevice.setDevice(NULL);
-                    continue;
-                }
-                
-                // personality strings depend on version
-                initBrcmStrings();
-
-                OSString* displayName = OSDynamicCast(OSString, getProperty(kDisplayName));
-                if (displayName)
-                    client->setProperty(kUSBProductString, displayName);
-                
-                mVendorId = mDevice.getVendorID();
-                mProductId = mDevice.getProductID();
-
-                // get firmware here to pre-cache for eventual use on wakeup or now
-                if (OSString* firmwareKey = OSDynamicCast(OSString, getProperty(kFirmwareKey)))
-                {
-                    if (BrcmFirmwareStore* firmwareStore = getFirmwareStore())
-                        firmwareStore->getFirmware(mVendorId, mProductId, firmwareKey);
-                }
-
-                uploadFirmware();
-                publishPersonality();
-
-                mDevice.setDevice(NULL);
-            }
-            iter->release();
-        }
+        AlwaysLog("Provider type is incorrect (not IOUSBDevice or IOUSBHostDevice)\n");
+        mDevice.setDevice(NULL);
+        return NULL;
     }
     
+    // personality strings depend on version
+    initBrcmStrings();
+
+    OSString* displayName = OSDynamicCast(OSString, getProperty(kDisplayName));
+    if (displayName)
+        provider->setProperty(kUSBProductString, displayName);
+    
+    mVendorId = mDevice.getVendorID();
+    mProductId = mDevice.getProductID();
+
+    // get firmware here to pre-cache for eventual use on wakeup or now
+    if (OSString* firmwareKey = OSDynamicCast(OSString, getProperty(kFirmwareKey)))
+    {
+        if (BrcmFirmwareStore* firmwareStore = getFirmwareStore())
+            firmwareStore->getFirmware(mVendorId, mProductId, firmwareKey);
+    }
+
+    uploadFirmware();
+    publishPersonality();
+
+    mDevice.setDevice(NULL);
+
     clock_get_uptime(&end_time);
     absolutetime_to_nanoseconds(end_time - start_time, &nano_secs);
     uint64_t milli_secs = nano_secs / 1000000;
@@ -685,7 +664,7 @@ bool BrcmPatchRAM::continuousRead()
         if (result == kIOUSBPipeStalled)
         {
             mInterruptPipe.clearStall();
-            result = mInterruptPipe.read(mReadBuffer, 0, 0, mReadBuffer->getLength(), &mInterruptCompletion);
+            result = mInterruptPipe.read(mReadBuffer, 0, 1000, mReadBuffer->getLength(), &mInterruptCompletion);
             
             if (result != kIOReturnSuccess)
             {
