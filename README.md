@@ -5,7 +5,7 @@ For the most part this fork is kept in sync with the-rehabman's verson.
 
 ###RehabMan Fork Downloads
 
-Builds are available on bitbucket: https://bitbucket.org/RehabMan/os-x-brcmpatchram/downloads/
+Builds are available on github: https://github.com/lvs1974/OS-X-BrcmPatchRAM-Mod/releases
 
 
 ###Installation
