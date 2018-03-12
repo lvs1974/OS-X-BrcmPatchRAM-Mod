@@ -664,7 +664,7 @@ bool BrcmPatchRAM::continuousRead()
         if (result == kIOUSBPipeStalled)
         {
             mInterruptPipe.clearStall();
-            result = mInterruptPipe.read(mReadBuffer, 0, 1000, mReadBuffer->getLength(), &mInterruptCompletion);
+            result = mInterruptPipe.read(mReadBuffer, 0, 0, mReadBuffer->getLength(), &mInterruptCompletion);
             
             if (result != kIOReturnSuccess)
             {
