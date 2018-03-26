@@ -657,14 +657,14 @@ bool BrcmPatchRAM::continuousRead()
         return false;
     }
 
-    if ((result = mInterruptPipe.read(mReadBuffer, 0, 0, mReadBuffer->getLength(), &mInterruptCompletion)) != kIOReturnSuccess)
+    if ((result = mInterruptPipe.read(mReadBuffer, 0, 20000, mReadBuffer->getLength(), &mInterruptCompletion)) != kIOReturnSuccess)
     {
         AlwaysLog("[%04x:%04x]: continuousRead - Failed to queue read (0x%08x)\n", mVendorId, mProductId, result);
 
         if (result == kIOUSBPipeStalled)
         {
             mInterruptPipe.clearStall();
-            result = mInterruptPipe.read(mReadBuffer, 0, 0, mReadBuffer->getLength(), &mInterruptCompletion);
+            result = mInterruptPipe.read(mReadBuffer, 0, 20000, mReadBuffer->getLength(), &mInterruptCompletion);
             
             if (result != kIOReturnSuccess)
             {
