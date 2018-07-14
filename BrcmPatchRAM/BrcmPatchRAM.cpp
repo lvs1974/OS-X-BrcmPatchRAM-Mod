@@ -164,29 +164,28 @@ IOService* BrcmPatchRAM::probe(IOService *provider, SInt32 *probeScore)
     absolutetime_to_nanoseconds(end_time - start_time, &nano_secs);
     uint64_t milli_secs = nano_secs / 1000000;
     AlwaysLog("Processing time %llu.%llu seconds.\n", milli_secs / 1000, milli_secs % 1000);
-
-    if (mDeviceState == kUpdateNotNeeded)
-    {
-        if (mLastTime == 0)
-            clock_get_uptime(&mLastTime);
-        else
-        {
-            clock_get_uptime(&end_time);
-            absolutetime_to_nanoseconds(end_time - mLastTime, &nano_secs);
-            milli_secs = nano_secs / 1000000;
-            if (milli_secs < 1000 && ++mLoopCounter > 10)
-            {
-                AlwaysLog("Boot loop detected, stopping...\n");
-                return IOService::probe(provider, probeScore);
-            }
-            mLastTime = end_time;
-        }
-    }
-    else
-    {
-        mLoopCounter = 0;
-        mLastTime = 0;
-    }
+	
+	if (mLastTime == 0)
+		clock_get_uptime(&mLastTime);
+	else
+	{
+		clock_get_uptime(&end_time);
+		absolutetime_to_nanoseconds(end_time - mLastTime, &nano_secs);
+		milli_secs = nano_secs / 1000000;
+		if (milli_secs < 1000)
+		{
+			if (++mLoopCounter > 10)
+			{
+				AlwaysLog("Boot loop detected, stopping...\n");
+				return IOService::probe(provider, probeScore);
+			}
+		}
+		else
+		{
+			mLoopCounter = 0;
+		}
+		mLastTime = end_time;
+	}
                 
     return NULL;
 }
